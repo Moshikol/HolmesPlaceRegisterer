@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HolmesPlaceRegisterer
 {
@@ -15,6 +11,7 @@ namespace HolmesPlaceRegisterer
         {
             string globres = "";
             string usrID = "10534167";
+            Exception EX2 = new Exception();
             try
             {
                 var httpWebRequest = (HttpWebRequest)WebRequest.Create("http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass");
@@ -25,7 +22,7 @@ namespace HolmesPlaceRegisterer
                 {
                     double d = ConvertToUnixTimestamp(DateTime.Now);
 
-                    string json = string.Format("{'companyId':200, 'branchId':210, 'userId':{1},'token':'72253fd0d48d4800a9372c09c6140113', 'lessonId':'10079', 'date': {0}, 'time':'203000', 'seatId':2}", d, usrID);
+                    string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'72253fd0d48d4800a9372c09c6140113', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':2}}", usrID,d ).ToString();
 
                     streamWriter.Write(json);
                     streamWriter.Flush();
@@ -37,13 +34,12 @@ namespace HolmesPlaceRegisterer
                 {
                     var result = streamReader.ReadToEnd();
                     globres = result.ToString();
-                    EmailSend(usrID, result.ToString(), "You Just Registerd Successfully");
+                    EmailSend(usrID, result.ToString(), "You Just Registerd Successfully", EX2);
                 }
             }
             catch (Exception EX)
             {
-
-                EmailSend(usrID, globres, "There Was An Exception :" + Environment.NewLine + EX.Message);
+                EmailSend(usrID, globres, "There Was An Exception :" +  EX.Message,EX);
             }
 
         }
@@ -55,7 +51,7 @@ namespace HolmesPlaceRegisterer
 
 
         }
-        public static void EmailSend(string users, string res, string Subj)
+        public static void EmailSend(string users, string res, string Subj,Exception ex)
         {
 
             MailAddress to = new MailAddress("moshiko.lev@gmail.com");
@@ -66,11 +62,14 @@ namespace HolmesPlaceRegisterer
             MailMessage mail = new MailMessage(from, to);
 
 
-            mail.Subject = Subj;
+            mail.Subject = Subj.ToString();
 
 
             mail.Body = "the users that was registered" + users;
             mail.Body += Environment.NewLine + "The Respond of the Server:" + Environment.NewLine + res;
+            mail.Body += "StackTrace:"+ Environment.NewLine + ex.StackTrace;
+            mail.Body += "Data:" + Environment.NewLine + ex.Data;
+            mail.Body += "InnerException:" + Environment.NewLine + ex.InnerException;
 
             SmtpClient smtp = new SmtpClient();
             smtp.Host = "smtp.gmail.com";
@@ -81,6 +80,8 @@ namespace HolmesPlaceRegisterer
             smtp.EnableSsl = true;
             Console.WriteLine("Sending email...");
             smtp.Send(mail);
+
+            
         }
     }
 }
