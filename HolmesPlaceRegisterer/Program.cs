@@ -14,15 +14,49 @@ namespace HolmesPlaceRegisterer
             Exception EX2 = new Exception();
             try
             {
-                var httpWebRequest = (HttpWebRequest)WebRequest.Create("http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass");
-                httpWebRequest.ContentType = "application/json";
-                httpWebRequest.Method = "POST";
+                // var httpWebRequest = (HttpWebRequest)WebRequest.Create("http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass");
+                //httpWebRequest.ContentType = "application/json";
+                //httpWebRequest.Method = "POST";
+
+                //using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+                //{
+                //    double d = ConvertToUnixTimestamp(DateTime.Now);
+                //    // 10078 = sigal 10079 = dudi
+                //    string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'72253fd0d48d4800a9372c09c6140113', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':23}}", usrID,d ).ToString();
+
+                //    streamWriter.Write(json);
+                //    streamWriter.Flush();
+                //    streamWriter.Close();
+                //}
+
+                //var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+                //using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                //{
+                //    var result = streamReader.ReadToEnd();
+                //    globres = result.ToString();
+                //    EmailSend(usrID, result.ToString(), "You Just Registerd Successfully", EX2);
+                //}
+            }
+            catch (Exception EX)
+            {
+                EmailSend(usrID, globres, "There Was An Exception :" + EX.Message, EX);
+            }
+
+        }
+
+        public static string SendWebReq(string Method, string json, string contentType, string url)
+        {
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+            httpWebRequest.ContentType = contentType;
+            httpWebRequest.Method = Method;
+            try
+            {
 
                 using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
                     double d = ConvertToUnixTimestamp(DateTime.Now);
-
-                    string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'72253fd0d48d4800a9372c09c6140113', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':2}}", usrID,d ).ToString();
+                    // 10078 = sigal 10079 = dudi
+                    //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'72253fd0d48d4800a9372c09c6140113', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':23}}", usrID, d).ToString();
 
                     streamWriter.Write(json);
                     streamWriter.Flush();
@@ -33,14 +67,18 @@ namespace HolmesPlaceRegisterer
                 using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
                 {
                     var result = streamReader.ReadToEnd();
-                    globres = result.ToString();
-                    EmailSend(usrID, result.ToString(), "You Just Registerd Successfully", EX2);
+
+                    EmailSend("", result.ToString(), "You Just Registerd Successfully", null);
+                    return result.ToString();
                 }
             }
-            catch (Exception EX)
+            catch (Exception ex)
             {
-                EmailSend(usrID, globres, "There Was An Exception :" +  EX.Message,EX);
+
+                return ex.Message;
             }
+
+
 
         }
         public static double ConvertToUnixTimestamp(DateTime date)
@@ -51,7 +89,7 @@ namespace HolmesPlaceRegisterer
 
 
         }
-        public static void EmailSend(string users, string res, string Subj,Exception ex)
+        public static void EmailSend(string users, string res, string Subj, Exception ex)
         {
 
             MailAddress to = new MailAddress("moshiko.lev@gmail.com");
@@ -67,7 +105,7 @@ namespace HolmesPlaceRegisterer
 
             mail.Body = "the users that was registered" + users;
             mail.Body += Environment.NewLine + "The Respond of the Server:" + Environment.NewLine + res;
-            mail.Body += "StackTrace:"+ Environment.NewLine + ex.StackTrace;
+            mail.Body += "StackTrace:" + Environment.NewLine + ex.StackTrace;
             mail.Body += "Data:" + Environment.NewLine + ex.Data;
             mail.Body += "InnerException:" + Environment.NewLine + ex.InnerException;
 
@@ -81,7 +119,7 @@ namespace HolmesPlaceRegisterer
             Console.WriteLine("Sending email...");
             smtp.Send(mail);
 
-            
+
         }
     }
 }
