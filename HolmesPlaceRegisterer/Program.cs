@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Mail;
 using System.Configuration;
 using System.Xml;
+using System.Diagnostics;
+using System.Text;
 
 namespace HolmesPlaceRegisterer
 {
@@ -11,11 +13,14 @@ namespace HolmesPlaceRegisterer
     {
         static void Main(string[] args)
         {
+            #region Vars
             string globres = "", Token = "";
             string usrID = "10534167";
             string LoginReq = "";
-
             Exception EX2 = new Exception();
+            Stream res;
+            #endregion
+
             try
             {
                 #region old func
@@ -43,17 +48,43 @@ namespace HolmesPlaceRegisterer
                 //} 
                 #endregion
 
+                #region Login
+                //Login To The System
                 using (var streamReader = new StreamReader(@"D:\Docs\ReqText.txt"))
                 {
                     LoginReq = streamReader.ReadToEnd();
+                    res = SendWebReq("POST", LoginReq, "text/xml;charset=utf-8", "http://api.holmesplace.co.il/WebServices/LoginService.asmx", true);
+                    Token = GetTokenFromReq(res);
                 }
-                Stream  res = SendWebReq("POST", LoginReq, "text/xml;charset=utf-8", "http://api.holmesplace.co.il/WebServices/LoginService.asmx" , true);
-                Token = GetTokenFromReq(res);
-                //double d = ConvertToUnixTimestamp(DateTime.Now);
+                #endregion
+                #region Register
+                //Register To The lesson
                 // 10078 = sigal 10079 = dudi
-                //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'72253fd0d48d4800a9372c09c6140113', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':23}}", usrID, d).ToString();
+                double d = ConvertToUnixTimestamp(DateTime.Now);
+              //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
+                string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
+                res = SendWebReq("POST", json, "application/json", "http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass", false);
+                using (var streamReader = new StreamReader(res))
+                {
+                    var result = streamReader.ReadToEnd();
+                    globres = result.ToString();
+                    EmailSend(usrID, result.ToString(), "You Just Registerd Successfully", EX2);
+                    using (var streamWriter = new StreamWriter(@"d:\Logs\LastLog.txt"))
+                    {
 
-                //  Console.WriteLine(RESULT);
+
+                        streamWriter.WriteLine("the Respond is "+globres);
+                        streamWriter.WriteLine("Date" + DateTime.Now.ToString());
+                        streamWriter.Flush();
+                        streamWriter.Close();
+                    }
+                    Process.Start(@"Notepad.exe", @"d:\Logs\LastLog.txt");
+              
+                }
+                #endregion
+
+                Debug.Print(globres);
+                Console.WriteLine(res.ToString());
             }
             catch (Exception EX)
             {
@@ -64,14 +95,14 @@ namespace HolmesPlaceRegisterer
 
         public static Stream SendWebReq(string Method, string ReqContent, string contentType, string url, bool Islogin)
         {
-
             var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
             httpWebRequest.ContentType = contentType;
             httpWebRequest.Method = Method;
             httpWebRequest.Host = "api.holmesplace.co.il";
             httpWebRequest.ContentLength = ReqContent.Length;
+
             if (Islogin)
-            {
+            {// if login all of this headers need to be added for a valid Request
                 httpWebRequest.UserAgent = "ksoap2-android/2.6.0+";
                 httpWebRequest.Headers.Add("USER_NAME", "sysuser!@#$");
                 httpWebRequest.Headers.Add("PASSWORD", "sysPassword!@#$");
@@ -92,14 +123,14 @@ namespace HolmesPlaceRegisterer
                 }
 
                 HttpWebResponse httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                
 
-                    Stream result = httpResponse.GetResponseStream();
 
-                    //   EmailSend("", result.ToString(), "You Just Registerd Successfully", null);
-                    // Console.WriteLine("The Responed of the Server is : " + result.ToString());
-                    return result;
-              
+                Stream result = httpResponse.GetResponseStream();
+
+                //   EmailSend("", result.ToString(), "You Just Registerd Successfully", null);
+                // Console.WriteLine("The Responed of the Server is : " + result.ToString());
+                return result;
+
             }
             catch (Exception ex)
             {
@@ -117,7 +148,7 @@ namespace HolmesPlaceRegisterer
             XmlDocument xd = new XmlDocument();
             xd.Load(Req);
             XmlNodeList RelNodes = xd.GetElementsByTagName("Token");
-           Token = RelNodes.Item(0).InnerText;
+            Token = RelNodes.Item(0).InnerText;
 
 
 
@@ -143,14 +174,15 @@ namespace HolmesPlaceRegisterer
             MailMessage mail = new MailMessage(from, to);
 
 
-            mail.Subject = Subj.ToString();
-
+            mail.Subject = Subj.ToString() + "The Respond of the Server:  " + res;
+            mail.SubjectEncoding = Encoding.UTF8;
 
             mail.Body = "the users that was registered" + users;
-            mail.Body += Environment.NewLine + "The Respond of the Server:" + Environment.NewLine + res;
-            mail.Body += "StackTrace:" + Environment.NewLine + ex.StackTrace;
+            mail.Body += Environment.NewLine + "The Respond of the Server:" + Environment.NewLine + res + Environment.NewLine;
+            mail.Body += "StackTrace:" + Environment.NewLine + ex.StackTrace +Environment.NewLine ;
             mail.Body += "Data:" + Environment.NewLine + ex.Data;
             mail.Body += "InnerException:" + Environment.NewLine + ex.InnerException;
+            mail.BodyEncoding = Encoding.UTF8;
 
             SmtpClient smtp = new SmtpClient();
             smtp.Host = "smtp.gmail.com";
