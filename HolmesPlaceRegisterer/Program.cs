@@ -61,8 +61,8 @@ namespace HolmesPlaceRegisterer
                 //Register To The lesson
                 // 10078 = sigal 10079 = dudi
                 double d = ConvertToUnixTimestamp(DateTime.Now);
-              //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
-                string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
+                string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
+              //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
                 res = SendWebReq("POST", json, "application/json", "http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass", false);
                 using (var streamReader = new StreamReader(res))
                 {
