@@ -6,6 +6,7 @@ using System.Configuration;
 using System.Xml;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 
 namespace HolmesPlaceRegisterer
 {
@@ -61,26 +62,48 @@ namespace HolmesPlaceRegisterer
                 //Register To The lesson
                 // 10078 = sigal 10079 = dudi
                 double d = ConvertToUnixTimestamp(DateTime.Now);
-                string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
-              //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
-                res = SendWebReq("POST", json, "application/json", "http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass", false);
-                using (var streamReader = new StreamReader(res))
+               // string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10072', 'date': {1}, 'time':'194500', 'seatId':22}}", usrID, d, Token).ToString();
+               string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
+                //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
+                int[] arrSeatNum = { 22, 21, 20, 19,24,25,26,27,28,29,30 };
+                int i =0;
+                bool StopTrying = false;
+                while ((!(globres.Contains("קיים רישום כבר לשיעור הזה"))) && (!(StopTrying))) //While you did not catch a seat 
                 {
-                    var result = streamReader.ReadToEnd();
-                    globres = result.ToString();
-                    EmailSend(usrID, result.ToString(), "You Just Registerd Successfully", EX2);
-                    using (var streamWriter = new StreamWriter(@"d:\Logs\LastLog.txt"))
+                    if(globres.Contains("מצטערים, ברגע זה נתפס המושב על ידי חבר מועדון אחר"))// if this number of seat is taken move one
                     {
+                        if (i < arrSeatNum.Length)
+                        {
+                            i++;
+                        }
+                        else
+                            StopTrying = true;
 
-
-                        streamWriter.WriteLine("the Respond is "+globres);
-                        streamWriter.WriteLine("Date" + DateTime.Now.ToString());
-                        streamWriter.Flush();
-                        streamWriter.Close();
+                        json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':{3}}", usrID, d, Token,arrSeatNum[i].ToString()).ToString();
                     }
-                    Process.Start(@"Notepad.exe", @"d:\Logs\LastLog.txt");
-              
+
+                    Thread.Sleep(200);
+                    res = SendWebReq("POST", json, "application/json", "http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass", false);
+                    using (var streamReader = new StreamReader(res))
+                    {
+                        var result = streamReader.ReadToEnd();
+                        globres = result.ToString();
+                        EmailSend(usrID, result.ToString(), result.ToString(), EX2);
+                        using (var streamWriter = new StreamWriter(@"d:\Logs\LastLog.txt"))
+                        {
+
+
+                            streamWriter.WriteLine("the Respond is " + globres);
+                            streamWriter.WriteLine("Date" + DateTime.Now.ToString());
+                            streamWriter.Flush();
+                            streamWriter.Close();
+                        }
+                        
+
+                    }
+                  
                 }
+                Process.Start(@"Notepad.exe", @"d:\Logs\LastLog.txt");
                 #endregion
 
                 Debug.Print(globres);
