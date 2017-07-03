@@ -62,24 +62,35 @@ namespace HolmesPlaceRegisterer
                 //Register To The lesson
                 // 10078 = sigal 10079 = dudi
                 double d = ConvertToUnixTimestamp(DateTime.Now);
-               // string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10072', 'date': {1}, 'time':'194500', 'seatId':22}}", usrID, d, Token).ToString();
-               string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
+                // string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10072', 'date': {1}, 'time':'194500', 'seatId':22}}", usrID, d, Token).ToString();
+                string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
                 //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
-                int[] arrSeatNum = { 22, 21, 20, 19,24,25,26,27,28,29,30 };
-                int i =0;
+                int[] arrSeatNum = { 22, 21, 20, 19, 24, 25, 26, 27, 28, 29, 30 };
+                int i = 0, ErrorCount = 0;
                 bool StopTrying = false;
                 while ((!(globres.Contains("קיים רישום כבר לשיעור הזה"))) && (!(StopTrying))) //While you did not catch a seat 
                 {
-                    if(globres.Contains("מצטערים, ברגע זה נתפס המושב על ידי חבר מועדון אחר"))// if this number of seat is taken move one
+                    if (globres.Contains("מצטערים, ברגע זה נתפס המושב על ידי חבר מועדון אחר"))// if this number of seat is taken move to another
                     {
-                        if (i < arrSeatNum.Length)
+                        if (i <= arrSeatNum.Length - 1)
                         {
                             i++;
+
                         }
                         else
                             StopTrying = true;
 
-                        json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':{3}}", usrID, d, Token,arrSeatNum[i].ToString()).ToString();
+                        json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':{3}}", usrID, d, Token, arrSeatNum[i].ToString()).ToString();
+                    }
+
+                    if (globres.Contains("ארעה שגיאה"))// safety Check
+                    {
+                        ErrorCount++;
+                        Thread.Sleep(500);
+                        if (ErrorCount > 10)
+                        {
+                            StopTrying = true;
+                        }
                     }
 
                     Thread.Sleep(200);
@@ -98,10 +109,10 @@ namespace HolmesPlaceRegisterer
                             streamWriter.Flush();
                             streamWriter.Close();
                         }
-                        
+
 
                     }
-                  
+
                 }
                 Process.Start(@"Notepad.exe", @"d:\Logs\LastLog.txt");
                 #endregion
@@ -202,7 +213,7 @@ namespace HolmesPlaceRegisterer
 
             mail.Body = "the users that was registered" + users;
             mail.Body += Environment.NewLine + "The Respond of the Server:" + Environment.NewLine + res + Environment.NewLine;
-            mail.Body += "StackTrace:" + Environment.NewLine + ex.StackTrace +Environment.NewLine ;
+            mail.Body += "StackTrace:" + Environment.NewLine + ex.StackTrace + Environment.NewLine;
             mail.Body += "Data:" + Environment.NewLine + ex.Data;
             mail.Body += "InnerException:" + Environment.NewLine + ex.InnerException;
             mail.BodyEncoding = Encoding.UTF8;
