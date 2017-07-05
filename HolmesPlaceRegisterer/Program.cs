@@ -62,14 +62,23 @@ namespace HolmesPlaceRegisterer
                 //Register To The lesson
                 // 10078 = sigal 10079 = dudi
                 double d = ConvertToUnixTimestamp(DateTime.Now);
+              
                 // string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10072', 'date': {1}, 'time':'194500', 'seatId':22}}", usrID, d, Token).ToString();
-                string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
+                  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10078', 'date': {1}, 'time':'191500', 'seatId':22}}", usrID, d, Token).ToString();
                 //  string json = String.Format("{{'companyId':200, 'branchId':210, 'userId':{0},'token':'{2}', 'lessonId':'10079', 'date': {1}, 'time':'203000', 'seatId':19}}", usrID, d, Token).ToString();
-                int[] arrSeatNum = { 22, 21, 20, 19, 24, 25, 26, 27, 28, 29, 30 };
-                int i = 0, ErrorCount = 0;
+                int[] arrSeatNum = {10, 22, 21, 20, 19, 24, 25, 26, 27, 28, 29, 30 };
+                int i = 1, ErrorCount = 0;
                 bool StopTrying = false;
+
                 while ((!(globres.Contains("קיים רישום כבר לשיעור הזה"))) && (!(StopTrying))) //While you did not catch a seat 
                 {
+
+                    if (globres.Contains("בהצלחה"))
+                    {
+                        string seat = arrSeatNum[i].ToString();
+                        EmailSend(usrID,globres, " You Succsefully Registerd To Seat Number: " + seat, EX2);
+                        StopTrying = true;
+                    }
                     if (globres.Contains("מצטערים, ברגע זה נתפס המושב על ידי חבר מועדון אחר"))// if this number of seat is taken move to another
                     {
                         if (i <= arrSeatNum.Length - 1)
@@ -85,8 +94,9 @@ namespace HolmesPlaceRegisterer
 
                     if (globres.Contains("ארעה שגיאה"))// safety Check
                     {
+                        
                         ErrorCount++;
-                        Thread.Sleep(500);
+                        Thread.Sleep(3000);
                         if (ErrorCount > 10)
                         {
                             StopTrying = true;
@@ -95,11 +105,12 @@ namespace HolmesPlaceRegisterer
 
                     Thread.Sleep(200);
                     res = SendWebReq("POST", json, "application/json", "http://api.holmesplace.co.il/MobileWebSite/Pages/Spinning.aspx/RegisterToSpinningClass", false);
+                    #region GetResponed
                     using (var streamReader = new StreamReader(res))
                     {
                         var result = streamReader.ReadToEnd();
                         globres = result.ToString();
-                        EmailSend(usrID, result.ToString(), result.ToString(), EX2);
+
                         using (var streamWriter = new StreamWriter(@"d:\Logs\LastLog.txt"))
                         {
 
@@ -112,8 +123,10 @@ namespace HolmesPlaceRegisterer
 
 
                     }
+                    #endregion
 
                 }
+
                 Process.Start(@"Notepad.exe", @"d:\Logs\LastLog.txt");
                 #endregion
 
@@ -122,7 +135,7 @@ namespace HolmesPlaceRegisterer
             }
             catch (Exception EX)
             {
-                EmailSend(usrID, globres, "There Was An Exception :" + EX.Message, EX);
+                EmailSend(usrID, globres, "There Was An Exception :" + EX.Message.ToString(), EX);
             }
 
         }
